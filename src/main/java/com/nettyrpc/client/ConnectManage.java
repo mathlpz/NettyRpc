@@ -1,34 +1,41 @@
 package com.nettyrpc.client;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.net.InetSocketAddress;
-import java.net.SocketAddress;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * RPC Connect Manage of ZooKeeper
  * Created by luxiaoxun on 2016-03-16.
  */
 public class ConnectManage {
+	
     private static final Logger logger = LoggerFactory.getLogger(ConnectManage.class);
     private volatile static ConnectManage connectManage;
 
     private EventLoopGroup eventLoopGroup = new NioEventLoopGroup(4);
-    private static ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(16, 16, 600L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(65536));
+    private static ThreadPoolExecutor threadPoolExecutor 
+    	= new ThreadPoolExecutor(16, 16, 600L, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(65536));
 
     private CopyOnWriteArrayList<RpcClientHandler> connectedHandlers = new CopyOnWriteArrayList<>();
     private Map<InetSocketAddress, RpcClientHandler> connectedServerNodes = new ConcurrentHashMap<>();
@@ -74,9 +81,9 @@ public class ConnectManage {
                     if (!connectedServerNodes.keySet().contains(serverNodeAddress)) {
                         connectServerNode(serverNodeAddress);
                     }
-                }
-
-                // Close and remove invalid server nodes
+	                }
+	
+	                // Close and remove invalid server nodes
                 for (int i = 0; i < connectedHandlers.size(); ++i) {
                     RpcClientHandler connectedServerHandler = connectedHandlers.get(i);
                     SocketAddress remotePeer = connectedServerHandler.getRemotePeer();
@@ -116,17 +123,17 @@ public class ConnectManage {
         threadPoolExecutor.submit(new Runnable() {
             @Override
             public void run() {
-                Bootstrap b = new Bootstrap();
-                b.group(eventLoopGroup)
+                Bootstrap bootstrap = new Bootstrap();
+                bootstrap.group(eventLoopGroup)
                         .channel(NioSocketChannel.class)
                         .handler(new RpcClientInitializer());
 
-                ChannelFuture channelFuture = b.connect(remotePeer);
+                ChannelFuture channelFuture = bootstrap.connect(remotePeer);
                 channelFuture.addListener(new ChannelFutureListener() {
                     @Override
                     public void operationComplete(final ChannelFuture channelFuture) throws Exception {
                         if (channelFuture.isSuccess()) {
-                            logger.debug("Successfully connect to remote server. remote peer = " + remotePeer);
+                            logger.debug("..........Successfully connect to remote server. remote peer = " + remotePeer);
                             RpcClientHandler handler = channelFuture.channel().pipeline().get(RpcClientHandler.class);
                             addHandler(handler);
                         }
