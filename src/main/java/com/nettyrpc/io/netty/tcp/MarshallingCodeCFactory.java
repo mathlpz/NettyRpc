@@ -12,7 +12,7 @@ import org.jboss.netty.handler.codec.marshalling.UnmarshallerProvider;
  * @author lpz
  *
  */
-public final class MarshallingCodeCFactory {
+public class MarshallingCodeCFactory {
 
  
     /**
@@ -21,9 +21,9 @@ public final class MarshallingCodeCFactory {
      */
     public static MarshallingDecoder buildMarshallingDecoder() {
           //首先通过Marshalling工具类的精通方法获取Marshalling实例对象 参数serial标识创建的是java序列化工厂对象。
-          final MarshallerFactorymarshallerFactory = Marshalling.getProvidedMarshallerFactory("serial");
+          final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("serial");
           //创建了MarshallingConfiguration对象，配置了版本号为5
-          final MarshallingConfigurationconfiguration = new MarshallingConfiguration();
+          final MarshallingConfiguration configuration = new MarshallingConfiguration();
           configuration.setVersion(5);
           //根据marshallerFactory和configuration创建provider
           UnmarshallerProvider provider= new DefaultUnmarshallerProvider(marshallerFactory, configuration);
@@ -42,8 +42,8 @@ public final class MarshallingCodeCFactory {
 
      */
     public static MarshallingEncoder buildMarshallingEncoder() {
-          final MarshallerFactorymarshallerFactory = Marshalling.getProvidedMarshallerFactory("serial");
-          final MarshallingConfigurationconfiguration = new MarshallingConfiguration();
+          final MarshallerFactory marshallerFactory = Marshalling.getProvidedMarshallerFactory("serial");
+          final MarshallingConfiguration configuration = new MarshallingConfiguration();
           configuration.setVersion(5);
           MarshallerProvider provider =new DefaultMarshallerProvider(marshallerFactory, configuration);
           //构建Netty的MarshallingEncoder对象，MarshallingEncoder用于实现序列化接口的POJO对象序列化为二进制数组

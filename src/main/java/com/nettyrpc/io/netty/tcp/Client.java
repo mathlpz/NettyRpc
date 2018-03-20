@@ -14,6 +14,11 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.logging.LogLevel;
 import io.netty.handler.logging.LoggingHandler;
 
+/**
+ * 
+ * @author lpz
+ *
+ */
 public class Client {
 
     public static void main(String[] args) {
