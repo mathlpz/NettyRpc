@@ -6,6 +6,9 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * 
@@ -22,6 +25,8 @@ import java.net.Socket;
  */
 public class Client {
     
+	private static Logger LOGGER = LoggerFactory.getLogger(Client.class);
+
     private static int PORT = 8379;  
     private static String IP = "127.0.0.1";  
     
@@ -32,12 +37,14 @@ public class Client {
         try {  
             socket = new Socket(IP, PORT);  
             printWriter = new PrintWriter(socket.getOutputStream(), true);  
-            printWriter.println("woshikehuduan, 客户端请求了服务器....");
+//			printWriter.println("我是客户端, 客户端请求了服务器....");
+			printWriter.println("我是客户端, 客户端请求了服务器....\r\n哈哈哈哈哈。。。\r\nsdfadsfasd地方撒的发生地方！！！");
+			LOGGER.info("我是客户端, 客户端请求了服务器....\r\n哈哈哈哈哈。。。\r\nsdfadsfasd地方撒的发生地方！！！");
             
             // 读取server返回的信息
             bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));  
             String response = bufferedReader.readLine();  
-            System.out.println("Client recived：" + response);  
+			LOGGER.info("Client recived：" + response);
         } catch (Exception e) {  
             e.printStackTrace();  
         } finally {  

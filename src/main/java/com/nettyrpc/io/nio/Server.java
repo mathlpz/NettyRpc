@@ -8,7 +8,10 @@ import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * IO（BIO）与NIO的区别，其本质就是阻塞和非阻塞的区别。
@@ -40,7 +43,9 @@ import java.util.Iterator;
  * @author lpz
  *
  */
-public class Server implements Runnable {  
+public class Server implements Runnable {
+
+	private static Logger LOGGER = LoggerFactory.getLogger(Server.class);
   
     private Selector selector;
     private ByteBuffer buffer = ByteBuffer.allocate(1024);
@@ -70,9 +75,10 @@ public class Server implements Runnable {
             ssChannel.bind(new InetSocketAddress(port));
             
             //5 把服务器通道注册到多路复用选择器上，并监听阻塞状态  
-            ssChannel.register(selector, SelectionKey.OP_ACCEPT);
+			SelectionKey register = ssChannel.register(selector, SelectionKey.OP_ACCEPT);
             
-            System.out.println("Server start, port：" + port);  
+			LOGGER.info("Server start, port：{}, register.channel:{}, interestOps:{}", port, register.channel(),
+					register.interestOps());
         } catch (IOException e) {  
             e.printStackTrace();  
         }  
@@ -81,24 +87,34 @@ public class Server implements Runnable {
     @Override  
     public void run() {
         
-        // 循环监听！！
-        while (true) {  
+		// 循环监听！！
+		// 同步非阻塞NIO
+		while (true) {
             try {  
-                //1 必须让多路复用选择器, 开始监听  
-                selector.select();  
+				// 1 必须让多路复用选择器, 开始监听。
+				// 一个Selector可以同时轮询多个Channel，因为JDK使用了epoll()代替传统的select实现，所以没有最大连接句柄1024/2048的限制。只需要一个线程负责Selector的轮询，就可以接入成千上万的客户端。
+				int select = selector.select();
+				LOGGER.info("selector.select()：{}", select);
                 //2 返回所有已经注册到多路复用选择器上的通道的SelectionKey  
-                Iterator<SelectionKey> keys = selector.selectedKeys().iterator();  
+                Set<SelectionKey> selectedKeys = selector.selectedKeys();
+				Iterator<SelectionKey> keys = selectedKeys.iterator();  
                 //3 遍历keys  
                 while (keys.hasNext()) {  
-                    SelectionKey key = keys.next();  
+					SelectionKey key = keys.next();
                     keys.remove();  
                     if(key.isValid()) { //如果key的状态是有效的  
                         if(key.isAcceptable()) { //如果key是阻塞状态，则调用accept()方法  
                             accept(key);  
                         }  
+						if (key.isConnectable()) { // 如果key是连接状态
+							LOGGER.info("key.isConnectable()");
+						}
                         if(key.isReadable()) { //如果key是可读状态，则调用read()方法  
                             read(key);  
                         }  
+						if (key.isWritable()) { // 如果key是可写状态
+							LOGGER.info("key.isWritable()");
+						}
                     }  
                 }  
             } catch (IOException e) {  
@@ -117,11 +133,13 @@ public class Server implements Runnable {
             //1 获取服务器通道  
             ServerSocketChannel ssc = (ServerSocketChannel) key.channel();  
             //2 执行阻塞方法  
-            SocketChannel sc = ssc.accept();  
-            //3 设置阻塞模式为非阻塞  
-            sc.configureBlocking(false);  
+			SocketChannel sChannel = ssc.accept();
+			// 3 设置阻塞模式为非阻塞
+			sChannel.configureBlocking(false);
+			// 向客户端发消息
+			sChannel.write(ByteBuffer.wrap(new String("send message to client").getBytes()));
             //4 注册到多路复用选择器上，并设置读取标识  
-            sc.register(selector, SelectionKey.OP_READ);  
+			sChannel.register(selector, SelectionKey.OP_READ);
         } catch (Exception e) {  
             e.printStackTrace();  
         }  
@@ -151,7 +169,7 @@ public class Server implements Runnable {
             buffer.get(bytes);  
             String body = new String(bytes).trim();
             
-            System.out.println("Server：" + body);  
+			System.out.println("Server received：" + body);
         } catch (Exception e) {  
             e.printStackTrace();  
         }  

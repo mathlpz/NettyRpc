@@ -33,3 +33,6 @@ target/
 .idea/
 .settings/
 .gitignore
+.checkstyle
+.classpath
+.project

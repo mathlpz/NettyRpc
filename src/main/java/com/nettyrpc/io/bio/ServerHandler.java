@@ -6,12 +6,20 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 
-public class ServerHandler implements Runnable {  
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+public class ServerHandler implements Runnable {
+
+	private static Logger LOGGER = LoggerFactory.getLogger(Server.class);
   
     private Socket socket;  
   
     public ServerHandler(Socket socket) {
-        System.out.println("ServerHandler()：" + socket.getInetAddress());
+		LOGGER.info(
+				"ServerHandler() constructor received socket, localPort:{}, localAddress:{}, channel:{}, inetAddress:{} ",
+				socket.getLocalPort(), socket.getLocalAddress(),
+				socket.getChannel(), socket.getInetAddress());
         this.socket = socket;  
     }  
   
@@ -19,19 +27,20 @@ public class ServerHandler implements Runnable {
     public void run() {  
         BufferedReader bufferedReader = null;  
         PrintWriter printWriter = null;  
-        try {  
-            bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));  
+		try {
+			// 读socket数据
+			bufferedReader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			// 返回socket数据
             printWriter = new PrintWriter(socket.getOutputStream(), true);  
   
             while (true) {  
                 String info = bufferedReader.readLine();  
-                System.out.println("客户端发送的消息000：" + info);
                 if(info == null)  
                     break;
-                System.out.println("客户端发送的消息：" + info);
+				LOGGER.info("客户端发送的消息，readLine：" + info);
                 
                 // server 返回响应客户端消息
-                printWriter.println("printWriter, 服务器端响应了客户端请求....");  
+				printWriter.println("printWriter socket outputStream, 服务器端响应了客户端请求....");
             }  
         } catch (Exception e) {  
             e.printStackTrace();  
